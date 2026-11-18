@@ -28,3 +28,7 @@ def map_to_region(x, y, region):
     left, top, right, bottom = region
     return (clamp((x - left) / (right - left)),
             clamp((y - top) / (bottom - top)))
+
+
+def distance(a, b):
+    return math.hypot(a[0] - b[0], a[1] - b[1])
