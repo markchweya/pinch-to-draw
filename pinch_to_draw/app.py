@@ -202,3 +202,56 @@ class PinchToDraw:
             self.catch_canvas.config(bg="#000000")
             self.catcher.attributes("-alpha", CATCHER_ALPHA)
         self.refresh()
+
+    def toggle_hidden(self):
+        self.ink_hidden = not self.ink_hidden
+        self.ink_win.attributes("-alpha", 0.0 if self.ink_hidden else 1.0)
+        self.hl_win.attributes("-alpha", 0.0 if self.ink_hidden else HIGHLIGHT_ALPHA)
+        if self.ink_hidden and self.draw_mode:
+            self.set_mode(False)
+        self.refresh()
+        self.toast("Ink hidden" if self.ink_hidden else "Ink visible")
+
+    # ------------------------------------------------------------ drawing
+    def eraser_radius(self):
+        return max(8, SIZES[self.size_idx] * 2.5) * self.scale
+
+    def on_move(self, e):
+        if self.tool == "eraser" and self.draw_mode:
+            r = self.eraser_radius()
+            self.canvas.coords(self.eraser_ring, e.x - r, e.y - r, e.x + r, e.y + r)
+            self.canvas.itemconfigure(self.eraser_ring, state="normal")
+            self.canvas.tag_raise(self.eraser_ring)
+
+    def on_press(self, e):
+        x, y = e.x, e.y
+        self.start = (x, y)
+        tool, colour, w = self.tool, self.color, self.width()
+        self.finish_text()
+        if tool == "text":
+            self.start_text(x, y)
+        elif tool == "eraser":
+            self.erased = []
+            self.erase_at(x, y)
+        elif tool == "pen":
+            self.points = [x, y, x + 0.5, y + 0.5]
+            self.current = (self.canvas, self.canvas.create_line(
+                *self.points, fill=colour, width=w, capstyle="round", joinstyle="round",
+                smooth=True, splinesteps=8))
+        elif tool == "highlighter":
+            self.points = [x, y, x + 0.5, y + 0.5]
+            self.current = (self.hl_canvas, self.hl_canvas.create_line(
+                *self.points, fill=colour, width=w * 4 + 6 * self.scale, capstyle="round",
+                joinstyle="round", smooth=True, splinesteps=8))
+        elif tool in ("line", "arrow"):
+            opts = dict(fill=colour, width=w, capstyle="round")
+            if tool == "arrow":
+                a = 6 + w * 2.2
+                opts.update(arrow="last", arrowshape=(a, a * 1.15, a * 0.45))
+            self.current = (self.canvas, self.canvas.create_line(x, y, x, y, **opts))
+        elif tool == "rect":
+            self.current = (self.canvas, self.canvas.create_rectangle(
+                x, y, x, y, outline=colour, width=w))
+        elif tool == "oval":
+            self.current = (self.canvas, self.canvas.create_oval(
+                x, y, x, y, outline=colour, width=w))
