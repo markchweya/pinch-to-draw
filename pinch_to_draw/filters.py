@@ -74,3 +74,15 @@ class Follower:
             self.pos = (px + (target[0] - px) * self.rate,
                         py + (target[1] - py) * self.rate)
         return self.pos
+
+
+def trim_tail(trail, seconds, keep=2):
+    """`trail` is [(t, x, y), ...]. Drop the samples from the last `seconds`
+    (keeping at least `keep`) and return the remaining (x, y) points."""
+    if not trail:
+        return []
+    cutoff = trail[-1][0] - seconds
+    kept = [(x, y) for t, x, y in trail if t <= cutoff]
+    if len(kept) < keep:
+        kept = [(x, y) for _, x, y in trail[:keep]]
+    return kept
