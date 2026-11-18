@@ -349,3 +349,61 @@ class PinchToDraw:
 
     def redo(self):
         self.history.redo()
+
+    def clear(self):
+        self.finish_text()
+        items = []
+        for c in (self.canvas, self.hl_canvas):
+            for i in c.find_all():
+                if "ui" not in c.gettags(i) and c.itemcget(i, "state") != "hidden":
+                    c.itemconfigure(i, state="hidden")
+                    items.append((c, i))
+        if items:
+            self.history.push("hide", items)
+            self.toast("Cleared  -  Ctrl+Z brings it back")
+
+    # ------------------------------------------------------------ air drawing
+    def toggle_air(self):
+        if self.air:
+            self.stop_air()
+            self.toast("Pinch drawing off")
+            return
+        if self.air_drawing.start():
+            self.air = self.air_drawing.tracker
+            self.toast("Pinch thumb + index finger to draw, open them to stop", 4500)
+        self.refresh()
+
+    def stop_air(self):
+        self.air_drawing.stop()
+        self.air = None
+        self.refresh()
+
+    # ------------------------------------------------------------ input
+    def on_key(self, e):
+        if self.text:
+            self.type_key(e)
+            return
+        ks = e.keysym
+        if e.state & CONTROL:
+            if ks.lower() == "z":
+                self.undo()
+            elif ks.lower() == "y":
+                self.redo()
+            return
+        k = ks.lower()
+        if ks == "Escape":
+            self.set_mode(False)
+        elif k in TOOL_SHORTCUTS:
+            self.set_tool(TOOL_SHORTCUTS[k])
+        elif len(ks) == 1 and ks in "12345678":
+            self.set_color(PALETTE[int(ks) - 1])
+        elif ks == "bracketleft":
+            self.set_size(self.size_idx - 1)
+        elif ks == "bracketright":
+            self.set_size(self.size_idx + 1)
+        elif ks == "Delete":
+            self.clear()
+        elif k == "w":
+            self.set_board("white")
+        elif k == "b":
+            self.set_board("black")
