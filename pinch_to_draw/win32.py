@@ -39,3 +39,10 @@ def enable_dpi_awareness():
 def hwnd_of(win):
     """The native handle of a Tk toplevel window."""
     return wt.HWND(int(win.wm_frame(), 16))
+
+
+def set_exstyle(win, add=0, remove=0):
+    """Add and/or remove extended window style bits."""
+    h = hwnd_of(win)
+    style = user32.GetWindowLongPtrW(h, GWL_EXSTYLE)
+    user32.SetWindowLongPtrW(h, GWL_EXSTYLE, (style | add) & ~remove)
