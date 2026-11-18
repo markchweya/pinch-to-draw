@@ -60,3 +60,8 @@ def virtual_screen():
     """(x, y, width, height) of the rectangle covering every monitor."""
     return (user32.GetSystemMetrics(76), user32.GetSystemMetrics(77),
             user32.GetSystemMetrics(78), user32.GetSystemMetrics(79))
+
+
+def primary_screen_size():
+    """(width, height) of the main monitor."""
+    return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
