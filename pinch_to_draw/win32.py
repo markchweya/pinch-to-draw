@@ -34,3 +34,8 @@ def enable_dpi_awareness():
             user32.SetProcessDPIAware()
         except Exception:
             pass
+
+
+def hwnd_of(win):
+    """The native handle of a Tk toplevel window."""
+    return wt.HWND(int(win.wm_frame(), 16))
