@@ -109,3 +109,35 @@ class Toolbar:
         self.win.update_idletasks()
         sw, _ = primary_screen_size()
         self.win.geometry(f"+{(sw - self.win.winfo_reqwidth()) // 2}+{self.app.px(12)}")
+
+    def _grip_press(self, e):
+        self._grip = (e.x_root - self.win.winfo_x(), e.y_root - self.win.winfo_y())
+
+    def _grip_drag(self, e):
+        self.win.geometry(f"+{e.x_root - self._grip[0]}+{e.y_root - self._grip[1]}")
+
+    # ------------------------------------------------------------ state
+    def refresh(self):
+        app = self.app
+        for key, button in self.tool_btns.items():
+            button.set_active(key == app.tool)
+        d = app.px(20)
+        for c, colour in self.swatches:
+            c.delete("all")
+            if colour == app.color:
+                c.create_oval(1, 1, d - 1, d - 1, outline=FG, width=2)
+            c.create_oval(5, 5, d - 5, d - 5, fill=colour, outline="#55555f")
+        for i, c in enumerate(self.size_btns):
+            c.delete("all")
+            if i == app.size_idx:
+                c.create_rectangle(0, 0, d, d, fill=BAR_ACTIVE, outline="")
+            r = max(1.5, SIZES[i] * 0.6) * app.scale
+            c.create_oval(d / 2 - r, d / 2 - r, d / 2 + r, d / 2 + r, fill=FG, outline="")
+        self.white_btn.set_active(app.board == "white")
+        self.black_btn.set_active(app.board == "black")
+        self.hide_btn.config(text="" if app.ink_hidden else "")
+        self.air_btn.set_active(app.air is not None)
+        if app.draw_mode:
+            self.mode_btn.config(text="✎  Draw", bg=ACCENT)
+        else:
+            self.mode_btn.config(text="↖  Mouse", bg=MOUSE_GREEN)
