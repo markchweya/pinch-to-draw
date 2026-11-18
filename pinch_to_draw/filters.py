@@ -40,3 +40,17 @@ class OneEuro:
         a = self._alpha(dt, self.min_cutoff + self.beta * abs(self.dx))
         self.x = a * x + (1 - a) * self.x
         return self.x
+
+
+class OneEuro2D:
+    """A OneEuro filter for an (x, y) point."""
+
+    def __init__(self, **kwargs):
+        self.fx, self.fy = OneEuro(**kwargs), OneEuro(**kwargs)
+
+    def reset(self):
+        self.fx.reset()
+        self.fy.reset()
+
+    def __call__(self, point, t):
+        return self.fx(point[0], t), self.fy(point[1], t)
