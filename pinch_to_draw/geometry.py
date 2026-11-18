@@ -37,3 +37,16 @@ def distance(a, b):
 def flatten(points):
     """[(x, y), ...] -> [x, y, x, y, ...] as Tk canvas coords want."""
     return [c for p in points for c in p]
+
+
+def thin_points(points, min_step=2.0):
+    """Drop points closer than `min_step` to the previous kept point,
+    always keeping the first and last."""
+    if len(points) <= 2:
+        return list(points)
+    kept = [points[0]]
+    for p in points[1:-1]:
+        if distance(p, kept[-1]) >= min_step:
+            kept.append(p)
+    kept.append(points[-1])
+    return kept
