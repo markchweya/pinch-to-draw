@@ -28,3 +28,26 @@ def _test(cap, tries=20):
         if ok and looks_like_colour_picture(frame):
             return True
     return False
+
+
+def open_camera():
+    """Return an opened cv2.VideoCapture, preferring a colour camera."""
+    fallback = None
+    for backend in BACKENDS:
+        for index in range(MAX_INDEX):
+            cap = cv2.VideoCapture(index, backend)
+            if not cap.isOpened():
+                cap.release()
+                continue
+            _configure(cap)
+            if _test(cap):
+                if fallback is not None:
+                    fallback.release()
+                return cap
+            if fallback is None:
+                fallback = cap
+            else:
+                cap.release()
+    if fallback is not None:
+        return fallback
+    raise RuntimeError("No webcam found (or another app is using it)")
