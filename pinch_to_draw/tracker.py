@@ -108,3 +108,13 @@ class HandTracker(threading.Thread):
         x, y = map_to_region(cx, cy, REGION)
         self._draw_hand(rgb, pts, (cx, cy), pinched)
         return {"present": True, "pinch": pinched, "t": now, "x": x, "y": y}
+
+    @staticmethod
+    def _draw_hand(rgb, pts, centre, pinched):
+        h, w = rgb.shape[:2]
+        colour = PINCH_COLOUR if pinched else OPEN_COLOUR
+        for i, j in BONES:
+            cv2.line(rgb, (int(pts[i][0] * w), int(pts[i][1] * h)),
+                     (int(pts[j][0] * w), int(pts[j][1] * h)), colour, 2)
+        cv2.circle(rgb, (int(centre[0] * w), int(centre[1] * h)), 9, colour,
+                   -1 if pinched else 2)
