@@ -134,3 +134,41 @@ class PinchToDraw:
 
     def toast(self, text, ms=1800):
         self.toaster.show(text, ms)
+
+    def refresh(self):
+        self.toolbar.refresh()
+
+    # ------------------------------------------------------------ state
+    def toggle_mode(self):
+        self.set_mode(not self.draw_mode)
+
+    def set_mode(self, draw):
+        self.finish_text()
+        self.draw_mode = draw
+        if draw:
+            if self.ink_hidden:
+                self.toggle_hidden()
+            self.catcher.deiconify()
+            set_exstyle(self.catcher, add=WS_EX_TOOLWINDOW | WS_EX_LAYERED)
+            set_click_through(self.ink_win, False)
+            win32.raise_topmost(self.stacking())
+            self.ink_win.focus_force()
+        else:
+            if self.board:
+                self.set_board(self.board)  # boards only make sense while drawing
+            self.catcher.withdraw()
+            set_click_through(self.ink_win, True)
+            self.canvas.itemconfigure(self.eraser_ring, state="hidden")
+        self.refresh()
+
+    def set_tool(self, tool):
+        self.finish_text()
+        self.tool = tool
+        if not self.draw_mode and not self.air:
+            self.set_mode(True)
+        cursor = {"text": "xterm", "eraser": "dotbox"}.get(tool, "crosshair")
+        self.canvas.config(cursor=cursor)
+        self.catch_canvas.config(cursor=cursor)
+        if tool != "eraser":
+            self.canvas.itemconfigure(self.eraser_ring, state="hidden")
+        self.refresh()
