@@ -463,3 +463,6 @@ class PinchToDraw:
         self.air_drawing.stop()
         self.hotkeys.stop()
         self.root.destroy()
+
+    def run(self):
+        self.root.mainloop()
