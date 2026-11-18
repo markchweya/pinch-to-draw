@@ -42,3 +42,21 @@ class Tooltip:
     def attach(self, widget, text):
         widget.bind("<Enter>", lambda e: self.show(widget, text), add="+")
         widget.bind("<Leave>", lambda e: self.hide(), add="+")
+
+
+class BarButton(tk.Label):
+    """A flat icon button with hover and active states."""
+
+    def __init__(self, parent, tooltip, glyph, font, tip, command, size=13):
+        super().__init__(parent, text=glyph, font=(font, size), bg=BAR_BG, fg=FG,
+                         width=2, padx=4, pady=4, cursor="hand2")
+        self.active = False
+        self.command = command
+        self.bind("<Enter>", lambda e: self.config(bg=BAR_ACTIVE if self.active else BAR_HOVER))
+        self.bind("<Leave>", lambda e: self.config(bg=BAR_ACTIVE if self.active else BAR_BG))
+        self.bind("<ButtonRelease-1>", lambda e: self.command())
+        tooltip.attach(self, tip)
+
+    def set_active(self, on):
+        self.active = on
+        self.config(bg=BAR_ACTIVE if on else BAR_BG, fg=ACCENT if on else FG)
