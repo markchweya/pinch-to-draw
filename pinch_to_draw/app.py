@@ -310,3 +310,42 @@ class PinchToDraw:
         self.canvas.focus(item)
         self.canvas.icursor(item, "end")
         self.ink_win.focus_force()
+
+    def finish_text(self):
+        if not self.text:
+            return
+        item, s = self.text
+        self.text = None
+        self.canvas.focus("")
+        if s.strip():
+            self.history.push("add", [(self.canvas, item)])
+        else:
+            self.canvas.delete(item)
+
+    def type_key(self, e):
+        item, s = self.text
+        ctrl = bool(e.state & CONTROL)
+        if e.keysym == "Escape":
+            self.finish_text()
+            return
+        if ctrl and e.keysym.lower() == "z":
+            self.finish_text()
+            self.undo()
+            return
+        if e.keysym == "BackSpace":
+            s = s[:-1]
+        elif e.keysym == "Return":
+            s += "\n"
+        elif e.char and e.char.isprintable() and not ctrl:
+            s += e.char
+        self.text = (item, s)
+        self.canvas.itemconfigure(item, text=s)
+        self.canvas.icursor(item, "end")
+
+    # ------------------------------------------------------------ history
+    def undo(self):
+        self.finish_text()
+        self.history.undo()
+
+    def redo(self):
+        self.history.redo()
