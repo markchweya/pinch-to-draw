@@ -11,3 +11,7 @@ MODEL_NAME = "hand_landmarker.task"
 def model_dir():
     base = os.environ.get("LOCALAPPDATA") or os.path.expanduser("~")
     return os.path.join(base, "PinchToDraw")
+
+
+def model_path():
+    return os.path.join(model_dir(), MODEL_NAME)
