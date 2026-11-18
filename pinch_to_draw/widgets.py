@@ -60,3 +60,36 @@ class BarButton(tk.Label):
     def set_active(self, on):
         self.active = on
         self.config(bg=BAR_ACTIVE if on else BAR_BG, fg=ACCENT if on else FG)
+
+
+class Toast:
+    """A short message that appears under the toolbar and fades away."""
+
+    def __init__(self, root, anchor):
+        self.root = root
+        self.anchor = anchor  # window the toast sits under
+        self.win = floating_window(root)
+        self.win.attributes("-alpha", 0.92)
+        self.label = tk.Label(self.win, bg="#000000", fg=FG, font=(UI_FONT, 10),
+                              padx=14, pady=7)
+        self.label.pack()
+        self.win.withdraw()
+        self.job = None
+        root.update_idletasks()
+        set_exstyle(self.win, add=PASSIVE)
+
+    def show(self, text, ms=1800):
+        self.label.config(text=text)
+        self.win.update_idletasks()
+        a = self.anchor
+        x = a.winfo_x() + a.winfo_width() // 2 - self.win.winfo_reqwidth() // 2
+        y = a.winfo_y() + a.winfo_height() + 8
+        self.win.geometry(f"+{x}+{y}")
+        self.win.deiconify()
+        self.win.lift()
+        if self.job:
+            self.root.after_cancel(self.job)
+        self.job = self.root.after(ms, self.win.withdraw)
+
+    def hide(self):
+        self.win.withdraw()
