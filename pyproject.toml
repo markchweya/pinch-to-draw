@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pinch-to-draw"
+version = "1.0.0"
+description = "Draw on top of anything on your Windows screen with the mouse, touchpad, or a webcam pinch."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Mark Chweya" }]
+keywords = ["screen annotation", "drawing", "hand tracking", "mediapipe", "webcam", "windows"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: Microsoft :: Windows",
+    "Environment :: Win32 (MS Windows)",
+    "Topic :: Multimedia :: Graphics",
+    "License :: OSI Approved :: MIT License",
+]
+dependencies = ["opencv-python>=4.8", "mediapipe>=0.10.14", "pillow>=10.0"]
+
+[project.urls]
+Homepage = "https://github.com/markchweya/pinch-to-draw"
+
+[project.gui-scripts]
+pinch-to-draw = "pinch_to_draw.app:main"
+
+[tool.setuptools]
+packages = ["pinch_to_draw"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
