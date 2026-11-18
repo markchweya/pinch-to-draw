@@ -46,3 +46,11 @@ def set_exstyle(win, add=0, remove=0):
     h = hwnd_of(win)
     style = user32.GetWindowLongPtrW(h, GWL_EXSTYLE)
     user32.SetWindowLongPtrW(h, GWL_EXSTYLE, (style | add) & ~remove)
+
+
+def set_click_through(win, on):
+    """Let mouse clicks fall through the window to whatever is behind it."""
+    if on:
+        set_exstyle(win, add=WS_EX_TRANSPARENT | WS_EX_LAYERED)
+    else:
+        set_exstyle(win, remove=WS_EX_TRANSPARENT)
