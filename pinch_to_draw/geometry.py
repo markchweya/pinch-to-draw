@@ -13,3 +13,10 @@ def snap_45(x0, y0, x, y):
     angle = round(math.atan2(y - y0, x - x0) / step) * step
     dist = math.hypot(x - x0, y - y0)
     return x0 + dist * math.cos(angle), y0 + dist * math.sin(angle)
+
+
+def square_corner(x0, y0, x, y):
+    """Corner that makes the box from (x0, y0) a square (for squares and circles)."""
+    side = max(abs(x - x0), abs(y - y0))
+    return (x0 + side * (1 if x >= x0 else -1),
+            y0 + side * (1 if y >= y0 else -1))
