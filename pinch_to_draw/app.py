@@ -118,3 +118,19 @@ class PinchToDraw:
             set_exstyle(w, add=WS_EX_TOOLWINDOW | WS_EX_LAYERED)
         set_exstyle(self.hl_win, add=WS_EX_TRANSPARENT)
         self.toolbar.apply_styles()
+
+    def stacking(self):
+        """Bottom to top."""
+        preview = self.air_drawing.preview_win
+        return [self.catcher, self.hl_win, self.ink_win, preview, self.toolbar.win,
+                self.toaster.win]
+
+    def keep_on_top(self):
+        win32.raise_topmost(self.stacking())
+        self.root.after(1500, self.keep_on_top)
+
+    def px(self, n):
+        return max(1, int(round(n * self.scale)))
+
+    def toast(self, text, ms=1800):
+        self.toaster.show(text, ms)
