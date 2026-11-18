@@ -32,3 +32,8 @@ def map_to_region(x, y, region):
 
 def distance(a, b):
     return math.hypot(a[0] - b[0], a[1] - b[1])
+
+
+def flatten(points):
+    """[(x, y), ...] -> [x, y, x, y, ...] as Tk canvas coords want."""
+    return [c for p in points for c in p]
