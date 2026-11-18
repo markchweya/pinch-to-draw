@@ -54,3 +54,23 @@ class OneEuro2D:
 
     def __call__(self, point, t):
         return self.fx(point[0], t), self.fy(point[1], t)
+
+
+class Follower:
+    """Moves a point a fixed fraction of the way to its target each step."""
+
+    def __init__(self, rate=0.5):
+        self.rate = rate
+        self.pos = None
+
+    def reset(self):
+        self.pos = None
+
+    def step(self, target):
+        if self.pos is None:
+            self.pos = target
+        else:
+            px, py = self.pos
+            self.pos = (px + (target[0] - px) * self.rate,
+                        py + (target[1] - py) * self.rate)
+        return self.pos
