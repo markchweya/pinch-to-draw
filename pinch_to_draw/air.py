@@ -121,3 +121,48 @@ class AirDrawing:
         x, y = self.smooth((st["x"] * sw, st["y"] * sh), st["t"])
         self.target = (x - self.app.vx, y - self.app.vy)
         self.pinched = st["pinch"]
+
+    def _frame(self):
+        """Every display frame: glide the pen and extend the stroke."""
+        canvas = self.app.canvas
+        if self.target is None:
+            canvas.itemconfigure(self.cursor, state="hidden")
+            self.follow.reset()
+            if self.down:
+                self._release()
+            return
+        x, y = self.follow.step(self.target)
+        r = self.app.px(10)
+        colour = self.app.color
+        canvas.coords(self.cursor, x - r, y - r, x + r, y + r)
+        canvas.itemconfigure(self.cursor, state="normal", outline=colour,
+                             fill=colour if self.pinched else "")
+        canvas.tag_raise(self.cursor)
+        if self.pinched and not self.down:
+            if self.app.tool == "text":
+                self.app.set_tool("pen")
+            self.down = True
+            self.trail = [(time.monotonic(), x, y)]
+            self.app.on_press(PointerEvent(x, y))
+        elif self.pinched:
+            self.trail.append((time.monotonic(), x, y))
+            self.app.on_drag(PointerEvent(x, y))
+        elif self.down:
+            self._release()
+
+    def _release(self):
+        """Finish the stroke without the hook drawn while the fingers opened."""
+        self.down = False
+        app = self.app
+        points = trim_tail(self.trail, TAIL_SECONDS)
+        self.trail = []
+        if points and app.current and app.tool in FREEHAND_TOOLS:
+            canvas, item = app.current
+            pts = thin_points(points)
+            if len(pts) < 2:
+                pts = pts * 2
+            canvas.coords(item, *flatten(pts))
+        elif points and app.current:
+            app.on_drag(PointerEvent(*points[-1]))
+        x, y = points[-1] if points else (0, 0)
+        app.on_release(PointerEvent(x, y))
