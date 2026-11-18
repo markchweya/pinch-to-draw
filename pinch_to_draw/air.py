@@ -85,3 +85,39 @@ class AirDrawing:
         w.geometry(f"+{sw - PREVIEW_W - app.px(24)}+{sh - PREVIEW_H - app.px(70)}")
         app.root.update_idletasks()
         set_exstyle(w, add=PASSIVE)
+
+    # ------------------------------------------------------------ loop
+    def _tick(self):
+        if not self.tracker:
+            return
+        if self.tracker.error:
+            err = self.tracker.error
+            self.app.stop_air()
+            self.app.toast(f"Camera problem: {err}", 5000)
+            return
+        seq, state, frame = self.tracker.latest()
+        if frame is None:
+            self.preview_label.config(text=self.tracker.status)
+        elif seq != self.seq:
+            self.seq = seq
+            self._show_frame(frame)
+            self._sample(state)
+        self._frame()
+        self.app.root.after(FRAME_MS, self._tick)
+
+    def _show_frame(self, frame):
+        from PIL import Image, ImageTk
+        self.preview_img = ImageTk.PhotoImage(Image.fromarray(frame))
+        self.preview_label.config(image=self.preview_img, text="")
+
+    def _sample(self, st):
+        """A new camera reading: update where the pen is heading."""
+        if not st["present"]:
+            self.target = None
+            self.pinched = False
+            self.smooth.reset()
+            return
+        sw, sh = primary_screen_size()
+        x, y = self.smooth((st["x"] * sw, st["y"] * sh), st["t"])
+        self.target = (x - self.app.vx, y - self.app.vy)
+        self.pinched = st["pinch"]
