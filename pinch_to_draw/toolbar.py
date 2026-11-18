@@ -55,3 +55,24 @@ class Toolbar:
         self.mode_btn.pack(side="left", padx=(0, self.app.px(6)))
         self.mode_btn.bind("<ButtonRelease-1>", lambda e: self.app.toggle_mode())
         self.app.tooltip.attach(self.mode_btn, "Switch Draw / Mouse mode  (Ctrl+Alt+D)")
+
+    def _add_tools(self):
+        self.tool_btns = {}
+        for key, label, glyph, font, shortcut in TOOLS:
+            self.tool_btns[key] = self._button(glyph, font, f"{label}  ({shortcut})",
+                                               lambda k=key: self.app.set_tool(k))
+
+    def _dot_canvas(self):
+        d = self.app.px(20)
+        c = tk.Canvas(self.bar, width=d, height=d, bg=BAR_BG, highlightthickness=0,
+                      cursor="hand2")
+        c.pack(side="left", padx=self.app.px(2))
+        return c
+
+    def _add_swatches(self):
+        self.swatches = []
+        for i, colour in enumerate(PALETTE):
+            c = self._dot_canvas()
+            c.bind("<ButtonRelease-1>", lambda e, col=colour: self.app.set_color(col))
+            self.app.tooltip.attach(c, f"Colour  ({i + 1})")
+            self.swatches.append((c, colour))
