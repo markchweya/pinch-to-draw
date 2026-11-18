@@ -43,3 +43,45 @@ class AirDrawing:
     @property
     def active(self):
         return self.tracker is not None
+
+    # ------------------------------------------------------------ on / off
+    def start(self):
+        try:
+            from PIL import Image, ImageTk  # noqa: F401
+            from pinch_to_draw.tracker import HandTracker
+        except ImportError:
+            self.app.toast("Pinch to draw needs:  pip install opencv-python mediapipe pillow",
+                           5000)
+            return False
+        self._reset()
+        self.tracker = HandTracker()
+        self.tracker.start()
+        self._build_preview()
+        self.app.root.after(FRAME_MS, self._tick)
+        return True
+
+    def stop(self):
+        if self.down:
+            self._release()
+        if self.tracker:
+            self.tracker.stop()
+        self.tracker = None
+        self.app.canvas.itemconfigure(self.cursor, state="hidden")
+        if self.preview_win:
+            self.preview_win.destroy()
+            self.preview_win = None
+
+    def _build_preview(self):
+        from pinch_to_draw.tracker import PREVIEW_H, PREVIEW_W
+        app = self.app
+        w = self.preview_win = floating_window(app.root, bg=BAR_EDGE)
+        # a blank image makes the label size itself in pixels, not characters
+        self.preview_img = tk.PhotoImage(width=PREVIEW_W, height=PREVIEW_H)
+        self.preview_label = tk.Label(w, bg="#000000", image=self.preview_img, fg=FG,
+                                      text="Starting camera...", compound="center",
+                                      font=(UI_FONT, 10))
+        self.preview_label.pack(padx=1, pady=1)
+        sw, sh = primary_screen_size()
+        w.geometry(f"+{sw - PREVIEW_W - app.px(24)}+{sh - PREVIEW_H - app.px(70)}")
+        app.root.update_idletasks()
+        set_exstyle(w, add=PASSIVE)
