@@ -407,3 +407,59 @@ class PinchToDraw:
             self.set_board("white")
         elif k == "b":
             self.set_board("black")
+
+    def poll_hotkeys(self):
+        actions = {
+            "toggle": self._hotkey_toggle,
+            "undo": self.undo,
+            "clear": self.clear,
+            "hide": self.toggle_hidden,
+            "board": lambda: self.set_board(self.board or "white"),
+            "air": self.toggle_air,
+        }
+        try:
+            while True:
+                name = self.hk_queue.get_nowait()
+                if name == "quit":
+                    self.quit()
+                    return
+                actions[name]()
+        except queue.Empty:
+            pass
+        self.root.after(50, self.poll_hotkeys)
+
+    def _hotkey_toggle(self):
+        self.toggle_mode()
+        self.toast("Draw mode" if self.draw_mode else "Mouse mode  -  clicks go to your apps")
+
+    # ------------------------------------------------------------ misc
+    def screenshot(self):
+        try:
+            from PIL import ImageGrab
+        except ImportError:
+            self.toast("Screenshots need Pillow:  pip install pillow", 3500)
+            return
+        self.toolbar.win.withdraw()
+        self.tooltip.hide()
+        self.toaster.hide()
+        self.root.update()
+        time.sleep(0.15)
+        try:
+            img = ImageGrab.grab(all_screens=True)
+            folder = os.path.join(os.path.expanduser("~"), "Pictures", "PinchToDraw")
+            os.makedirs(folder, exist_ok=True)
+            path = os.path.join(folder, time.strftime("PinchToDraw_%Y%m%d_%H%M%S.png"))
+            img.save(path)
+            msg = f"Saved  {path}"
+        except Exception as ex:
+            msg = f"Screenshot failed: {ex}"
+        self.toolbar.win.deiconify()
+        self.root.update_idletasks()
+        self.toolbar.apply_styles()
+        win32.raise_topmost(self.stacking())
+        self.toast(msg, 3500)
+
+    def quit(self):
+        self.air_drawing.stop()
+        self.hotkeys.stop()
+        self.root.destroy()
