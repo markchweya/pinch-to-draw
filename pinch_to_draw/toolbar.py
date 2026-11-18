@@ -76,3 +76,36 @@ class Toolbar:
             c.bind("<ButtonRelease-1>", lambda e, col=colour: self.app.set_color(col))
             self.app.tooltip.attach(c, f"Colour  ({i + 1})")
             self.swatches.append((c, colour))
+
+    def _add_sizes(self):
+        self.size_btns = []
+        for i in range(len(SIZES)):
+            c = self._dot_canvas()
+            c.bind("<ButtonRelease-1>", lambda e, i=i: self.app.set_size(i))
+            self.app.tooltip.attach(c, "Thickness  ([ and ])")
+            self.size_btns.append(c)
+
+    def _add_actions(self):
+        app = self.app
+        self._button("", ICON_FONT, "Undo  (Ctrl+Z)", app.undo)
+        self._button("", ICON_FONT, "Redo  (Ctrl+Y)", app.redo)
+        self._button("", ICON_FONT, "Clear all  (Delete / Ctrl+Alt+C)", app.clear)
+        self._sep()
+        self.white_btn = self._button("□", SYM_FONT, "Whiteboard  (W)",
+                                      lambda: app.set_board("white"))
+        self.black_btn = self._button("■", SYM_FONT, "Blackboard  (B)",
+                                      lambda: app.set_board("black"))
+        self.hide_btn = self._button("", ICON_FONT, "Hide / show ink  (Ctrl+Alt+H)",
+                                     app.toggle_hidden)
+        self.air_btn = self._button("", ICON_FONT,
+                                    "Pinch to draw with the webcam  (Ctrl+Alt+A)",
+                                    app.toggle_air)
+        self._button("", ICON_FONT, "Save screenshot to Pictures\\PinchToDraw",
+                     app.screenshot)
+        close = self._button("", ICON_FONT, "Quit  (Ctrl+Alt+Q)", app.quit, size=11)
+        close.pack_configure(padx=(self.app.px(4), 0))
+
+    def _place(self):
+        self.win.update_idletasks()
+        sw, _ = primary_screen_size()
+        self.win.geometry(f"+{(sw - self.win.winfo_reqwidth()) // 2}+{self.app.px(12)}")
