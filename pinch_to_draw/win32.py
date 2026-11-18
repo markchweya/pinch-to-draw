@@ -65,3 +65,15 @@ def virtual_screen():
 def primary_screen_size():
     """(width, height) of the main monitor."""
     return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+
+
+def raise_topmost(windows):
+    """Re-stack windows at the top of the always-on-top band, in order, so
+    the last one ends up highest. Skips windows that no longer exist."""
+    flags = SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE
+    for w in windows:
+        try:
+            if w is not None and w.winfo_exists():
+                user32.SetWindowPos(hwnd_of(w), wt.HWND(HWND_TOPMOST), 0, 0, 0, 0, flags)
+        except Exception:
+            pass
