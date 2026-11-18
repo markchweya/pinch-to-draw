@@ -35,3 +35,23 @@ class Toolbar:
         b = BarButton(self.bar, self.app.tooltip, glyph, font, tip, command, **kw)
         b.pack(side="left")
         return b
+
+    def _sep(self):
+        tk.Frame(self.bar, bg=BAR_EDGE, width=1, height=self.app.px(22)).pack(
+            side="left", padx=self.app.px(6))
+
+    def _add_grip(self):
+        grip = tk.Label(self.bar, text="⋮⋮", font=(UI_FONT, 12), bg=BAR_BG,
+                        fg=FG_DIM, cursor="fleur", padx=2)
+        grip.pack(side="left", padx=(0, self.app.px(4)))
+        grip.bind("<ButtonPress-1>", self._grip_press)
+        grip.bind("<B1-Motion>", self._grip_drag)
+        self.app.tooltip.attach(grip, "Drag to move the toolbar")
+
+    def _add_mode_button(self):
+        self.mode_btn = tk.Label(self.bar, font=(UI_FONT + " Semibold", 10), fg="#ffffff",
+                                 padx=self.app.px(10), pady=self.app.px(4), cursor="hand2",
+                                 width=7)
+        self.mode_btn.pack(side="left", padx=(0, self.app.px(6)))
+        self.mode_btn.bind("<ButtonRelease-1>", lambda e: self.app.toggle_mode())
+        self.app.tooltip.attach(self.mode_btn, "Switch Draw / Mouse mode  (Ctrl+Alt+D)")
