@@ -20,3 +20,11 @@ def looks_like_colour_picture(frame):
     bright = (b + g + r) / 3 > 25
     colourful = max(abs(b - g), abs(g - r), abs(b - r)) > 1.5
     return bright and colourful
+
+
+def _test(cap, tries=20):
+    for _ in range(tries):  # give auto-exposure a moment
+        ok, frame = cap.read()
+        if ok and looks_like_colour_picture(frame):
+            return True
+    return False
