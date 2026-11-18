@@ -466,3 +466,11 @@ class PinchToDraw:
 
     def run(self):
         self.root.mainloop()
+
+
+def main():
+    PinchToDraw().run()
+
+
+if __name__ == "__main__":
+    main()
