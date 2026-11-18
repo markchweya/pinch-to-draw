@@ -20,3 +20,11 @@ def square_corner(x0, y0, x, y):
     side = max(abs(x - x0), abs(y - y0))
     return (x0 + side * (1 if x >= x0 else -1),
             y0 + side * (1 if y >= y0 else -1))
+
+
+def map_to_region(x, y, region):
+    """Stretch the part of the camera picture inside `region` (left, top,
+    right, bottom, all 0..1) to the whole 0..1 range, clamped."""
+    left, top, right, bottom = region
+    return (clamp((x - left) / (right - left)),
+            clamp((y - top) / (bottom - top)))
