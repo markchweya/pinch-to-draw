@@ -15,3 +15,15 @@ def model_dir():
 
 def model_path():
     return os.path.join(model_dir(), MODEL_NAME)
+
+
+def ensure_model():
+    """Path to the model, downloading it first if it is not there yet."""
+    path = model_path()
+    if os.path.exists(path) and os.path.getsize(path) > 1_000_000:
+        return path
+    os.makedirs(model_dir(), exist_ok=True)
+    tmp = path + ".part"
+    urllib.request.urlretrieve(MODEL_URL, tmp)
+    os.replace(tmp, path)
+    return path
