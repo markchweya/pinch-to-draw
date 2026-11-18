@@ -1,0 +1,120 @@
+"""The overlay: three stacked see-through windows plus the toolbar.
+
+  catcher   almost invisible, receives the mouse in Draw mode (or shows the
+            whiteboard / blackboard)
+  highlight translucent layer for highlighter strokes, never receives clicks
+  ink       solid strokes; colour-keyed so everything else is see-through
+"""
+
+import os
+import queue
+import time
+import tkinter as tk
+
+from pinch_to_draw import win32
+from pinch_to_draw.air import AirDrawing
+from pinch_to_draw.geometry import snap_45, square_corner
+from pinch_to_draw.history import History
+from pinch_to_draw.hotkeys import HotkeyThread, ctrl_alt
+from pinch_to_draw.theme import (BLACKBOARD, HIGHLIGHT_ALPHA, KEY, PALETTE, SIZES,
+                                 TOOL_SHORTCUTS, UI_FONT, WHITEBOARD)
+from pinch_to_draw.toolbar import Toolbar
+from pinch_to_draw.widgets import Toast, Tooltip
+from pinch_to_draw.win32 import (WS_EX_LAYERED, WS_EX_TOOLWINDOW, WS_EX_TRANSPARENT,
+                                 set_click_through, set_exstyle)
+
+SHIFT, CONTROL = 0x0001, 0x0004
+CATCHER_ALPHA = 0.01  # invisible to the eye, but still catches the mouse
+
+HOTKEYS = [
+    ctrl_alt("D", "toggle"),
+    ctrl_alt("Z", "undo"),
+    ctrl_alt("C", "clear"),
+    ctrl_alt("H", "hide"),
+    ctrl_alt("W", "board"),
+    ctrl_alt("A", "air"),
+    ctrl_alt("Q", "quit"),
+]
+
+
+class PinchToDraw:
+    def __init__(self):
+        win32.enable_dpi_awareness()
+        self.root = tk.Tk()
+        self.root.withdraw()
+        self.scale = self.root.winfo_fpixels("1i") / 96.0
+        self.vx, self.vy, self.vw, self.vh = win32.virtual_screen()
+
+        self.tool, self.color, self.size_idx = "pen", PALETTE[0], 1
+        self.draw_mode = True
+        self.ink_hidden = False
+        self.board = None  # None, "white" or "black"
+        self.history = History()
+        self.current = None  # (canvas, item) being drawn
+        self.text = None  # (item, string) while typing
+        self.erased = []
+        self.points = []
+
+        self._build_layers()
+        self.tooltip = Tooltip(self.root)
+        self.toolbar = Toolbar(self)
+        self.toaster = Toast(self.root, self.toolbar.win)
+        self.air = None
+        self.air_drawing = AirDrawing(self)
+        self._apply_styles()
+
+        self.root.bind_all("<Key>", self.on_key)
+        self.hk_queue = queue.Queue()
+        self.hotkeys = HotkeyThread(HOTKEYS, self.hk_queue)
+        self.hotkeys.start()
+        self.hotkeys.ready.wait(2)
+
+        self.set_mode(True)
+        msg = "Draw mode  -  Esc or Ctrl+Alt+D for Mouse mode  -  Ctrl+Alt+A to pinch-draw"
+        if self.hotkeys.failed:
+            msg += f"   (hotkeys taken by another app: {', '.join(self.hotkeys.failed)})"
+        self.toast(msg, 5000)
+        self.root.after(50, self.poll_hotkeys)
+        self.root.after(1500, self.keep_on_top)
+
+    # ------------------------------------------------------------ windows
+    def _layer(self, bg):
+        w = tk.Toplevel(self.root, bg=bg)
+        w.overrideredirect(True)
+        w.geometry(f"{self.vw}x{self.vh}+{self.vx}+{self.vy}")
+        w.attributes("-topmost", True)
+        return w
+
+    def _build_layers(self):
+        self.catcher = self._layer("#000000")
+        self.catcher.attributes("-alpha", CATCHER_ALPHA)
+        self.catch_canvas = tk.Canvas(self.catcher, bg="#000000", highlightthickness=0,
+                                      cursor="crosshair")
+        self.catch_canvas.pack(fill="both", expand=True)
+
+        self.hl_win = self._layer(KEY)
+        self.hl_win.attributes("-transparentcolor", KEY)
+        self.hl_win.attributes("-alpha", HIGHLIGHT_ALPHA)
+        self.hl_canvas = tk.Canvas(self.hl_win, bg=KEY, highlightthickness=0)
+        self.hl_canvas.pack(fill="both", expand=True)
+
+        self.ink_win = self._layer(KEY)
+        self.ink_win.attributes("-transparentcolor", KEY)
+        self.canvas = tk.Canvas(self.ink_win, bg=KEY, highlightthickness=0,
+                                cursor="crosshair")
+        self.canvas.pack(fill="both", expand=True)
+        self.eraser_ring = self.canvas.create_oval(0, 0, 0, 0, outline="#888888", width=1,
+                                                   dash=(3, 2), state="hidden", tags=("ui",))
+
+        for c in (self.catch_canvas, self.canvas):
+            c.bind("<ButtonPress-1>", self.on_press)
+            c.bind("<B1-Motion>", self.on_drag)
+            c.bind("<ButtonRelease-1>", self.on_release)
+            c.bind("<Motion>", self.on_move)
+
+    def _apply_styles(self):
+        self.root.update_idletasks()
+        for w in (self.catcher, self.hl_win, self.ink_win):
+            set_exstyle(w, add=WS_EX_TOOLWINDOW | WS_EX_LAYERED)
+        set_exstyle(self.hl_win, add=WS_EX_TRANSPARENT)
+        self.toolbar.apply_styles()
