@@ -18,3 +18,28 @@ class PointerEvent:
 
     def __init__(self, x, y):
         self.x, self.y, self.state = x, y, 0
+
+
+class AirDrawing:
+    def __init__(self, app):
+        self.app = app
+        self.tracker = None
+        self.preview_win = None
+        self.cursor = app.canvas.create_oval(0, 0, 0, 0, width=2, state="hidden",
+                                             tags=("ui",))
+        self.smooth = OneEuro2D(min_cutoff=1.0, beta=0.007)
+        self.follow = Follower(rate=0.5)
+        self._reset()
+
+    def _reset(self):
+        self.seq = -1
+        self.target = None
+        self.pinched = False
+        self.down = False
+        self.trail = []
+        self.smooth.reset()
+        self.follow.reset()
+
+    @property
+    def active(self):
+        return self.tracker is not None
