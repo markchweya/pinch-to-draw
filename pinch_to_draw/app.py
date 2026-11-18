@@ -255,3 +255,58 @@ class PinchToDraw:
         elif tool == "oval":
             self.current = (self.canvas, self.canvas.create_oval(
                 x, y, x, y, outline=colour, width=w))
+
+    def on_drag(self, e):
+        x, y = e.x, e.y
+        shift = bool(e.state & SHIFT)
+        if self.tool == "eraser":
+            self.on_move(e)
+            self.erase_at(x, y)
+            return
+        if not self.current:
+            return
+        canvas, item = self.current
+        x0, y0 = self.start
+        if self.tool in ("pen", "highlighter"):
+            if shift:
+                self.points = [x0, y0, x, y]
+                canvas.coords(item, *self.points)
+            elif abs(x - self.points[-2]) + abs(y - self.points[-1]) >= 2:
+                self.points += [x, y]
+                canvas.coords(item, *self.points)
+        elif self.tool in ("line", "arrow"):
+            if shift:
+                x, y = snap_45(x0, y0, x, y)
+            canvas.coords(item, x0, y0, x, y)
+        else:
+            if shift:
+                x, y = square_corner(x0, y0, x, y)
+            canvas.coords(item, x0, y0, x, y)
+
+    def on_release(self, e):
+        if self.tool == "eraser":
+            self.history.push("hide", self.erased)
+            self.erased = []
+        elif self.current:
+            self.history.push("add", [self.current])
+            self.current = None
+
+    def erase_at(self, x, y):
+        r = self.eraser_radius()
+        for canvas in (self.canvas, self.hl_canvas):
+            for item in canvas.find_overlapping(x - r, y - r, x + r, y + r):
+                if "ui" in canvas.gettags(item):
+                    continue
+                if canvas.itemcget(item, "state") != "hidden":
+                    canvas.itemconfigure(item, state="hidden")
+                    self.erased.append((canvas, item))
+
+    # ------------------------------------------------------------ text
+    def start_text(self, x, y):
+        font = (UI_FONT, int(10 + SIZES[self.size_idx] * 2.2))
+        item = self.canvas.create_text(x, y, text="", anchor="nw", fill=self.color, font=font)
+        self.text = (item, "")
+        self.canvas.focus_set()
+        self.canvas.focus(item)
+        self.canvas.icursor(item, "end")
+        self.ink_win.focus_force()
