@@ -172,3 +172,33 @@ class PinchToDraw:
         if tool != "eraser":
             self.canvas.itemconfigure(self.eraser_ring, state="hidden")
         self.refresh()
+
+    def set_color(self, colour):
+        self.color = colour
+        if self.text:
+            self.canvas.itemconfigure(self.text[0], fill=colour)
+        if self.tool == "eraser":
+            self.set_tool("pen")
+        self.refresh()
+
+    def set_size(self, i):
+        self.size_idx = max(0, min(len(SIZES) - 1, i))
+        self.refresh()
+
+    def width(self):
+        return SIZES[self.size_idx] * self.scale
+
+    def set_board(self, kind):
+        self.board = None if self.board == kind else kind
+        if self.board:
+            if not self.draw_mode:
+                self.set_mode(True)
+            colour = WHITEBOARD if self.board == "white" else BLACKBOARD
+            self.catcher.config(bg=colour)
+            self.catch_canvas.config(bg=colour)
+            self.catcher.attributes("-alpha", 1.0)
+        else:
+            self.catcher.config(bg="#000000")
+            self.catch_canvas.config(bg="#000000")
+            self.catcher.attributes("-alpha", CATCHER_ALPHA)
+        self.refresh()
