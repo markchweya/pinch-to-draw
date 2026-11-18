@@ -45,3 +45,8 @@ class HotkeyThread(threading.Thread):
     def stop(self):
         if self.tid:
             user32.PostThreadMessageW(self.tid, WM_QUIT, 0, 0)
+
+
+def ctrl_alt(letter, name):
+    """Shorthand for a Ctrl+Alt+<letter> binding."""
+    return (MOD_CONTROL | MOD_ALT, ord(letter.upper()), name)
